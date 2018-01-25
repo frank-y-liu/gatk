@@ -9,6 +9,7 @@ import htsjdk.samtools.util.LineReader;
 import htsjdk.tribble.AsciiFeatureCodec;
 import htsjdk.tribble.readers.LineIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.broadinstitute.hellbender.exceptions.UserException;
@@ -216,10 +217,9 @@ public final class XsvLocatableTableCodec extends AsciiFeatureCodec<XsvTableFeat
                         .collect(Collectors.toCollection(ArrayList::new));
                 headerToIndex = IntStream.range(0, header.size()).boxed()
                         .collect(Collectors.toMap(i-> header.get(i), Function.identity()));
-
-                finalContigColumn = isInteger(inputContigColumn) ? header.get(Integer.valueOf(inputContigColumn)) : inputContigColumn;
-                finalStartColumn = isInteger(inputStartColumn) ? header.get(Integer.valueOf(inputStartColumn)) : inputStartColumn;
-                finalEndColumn = isInteger(inputEndColumn) ? header.get(Integer.valueOf(inputEndColumn)) : inputEndColumn;
+                finalContigColumn = NumberUtils.isNumber(inputContigColumn) ? header.get(Integer.valueOf(inputContigColumn)) : inputContigColumn;
+                finalStartColumn = StringUtils.isNumeric(inputStartColumn) ? header.get(Integer.valueOf(inputStartColumn)) : inputStartColumn;
+                finalEndColumn = StringUtils.isNumeric(inputEndColumn) ? header.get(Integer.valueOf(inputEndColumn)) : inputEndColumn;
 
                 locatableColumns = Lists.newArrayList(finalContigColumn, finalStartColumn, finalEndColumn);
 
@@ -372,30 +372,15 @@ public final class XsvLocatableTableCodec extends AsciiFeatureCodec<XsvTableFeat
         return finalEndColumn;
     }
 
+    /**
+     * Throw an exception if the given column name cannot be used for one of the locatable columns.
+     * @param columnName candidate column name for one of the locatable fields (contig, start, or end)
+     */
+    public static void validateLocatableColumnName(String columnName) {
+        Utils.validateArg(!StringUtils.isEmpty(columnName), "column header is blank.");
+        Utils.validateArg(!org.apache.commons.lang.math.NumberUtils.isNumber(columnName), "column header cannot be a number: " + columnName);
+    }
+
     //==================================================================================================================
     // Helper Data Types:
-
-    /** Slightly modified from:
-     * https://stackoverflow.com/questions/237159/whats-the-best-way-to-check-if-a-string-represents-an-integer-in-java
-     */
-    private static boolean isInteger(final String str) {
-        if (StringUtils.isEmpty(str)) {
-            return false;
-        }
-        final int length = str.length();
-        int i = 0;
-        if (str.charAt(0) == '-') {
-            if (length == 1) {
-                return false;
-            }
-            i = 1;
-        }
-        for (; i < length; i++) {
-            char c = str.charAt(i);
-            if (c < '0' || c > '9') {
-                return false;
-            }
-        }
-        return true;
-    }
 }

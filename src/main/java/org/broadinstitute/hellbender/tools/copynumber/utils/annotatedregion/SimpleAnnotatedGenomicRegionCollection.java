@@ -5,12 +5,13 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.tribble.readers.AsciiLineReader;
 import htsjdk.tribble.readers.AsciiLineReaderIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.broadinstitute.hdf5.Utils;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.codecs.xsvLocatableTable.XsvLocatableTableCodec;
 import org.broadinstitute.hellbender.utils.codecs.xsvLocatableTable.XsvTableFeature;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.tsv.DataLine;
 import org.broadinstitute.hellbender.utils.tsv.TableColumnCollection;
 import org.broadinstitute.hellbender.utils.tsv.TableWriter;
@@ -26,9 +27,12 @@ import java.util.stream.IntStream;
  * Though {@link SimpleAnnotatedGenomicRegion::CONTIG_HEADER},
  *  {@link SimpleAnnotatedGenomicRegion::START_HEADER}, and
  *  {@link SimpleAnnotatedGenomicRegion::END_HEADER} are expected, by default, for defining the genomic region.
+ *
+ *  This class supports reading xsv (tsv, csv) files with comments ("#") and SAM headers ("@").  The default is tsv.
  */
 public class SimpleAnnotatedGenomicRegionCollection {
 
+    public static final String ANNOTATED_REGION_DEFAULT_CONFIG_RESOURCE = "org/broadinstitute/hellbender/tools/copynumber/utils/annotatedregion/annotated_region_default.config";
     private SAMFileHeader samFileHeader;
 
     /** Does not include the locatable fields. */
@@ -57,26 +61,61 @@ public class SimpleAnnotatedGenomicRegionCollection {
         this.endColumnName = endColumnName;
     }
 
-    //TODO: Docs
+    /**
+     *  Same as {@link #create(Path, Path, Set)} , but uses the default annotation
+     *   region config file in the GATK.
+     * @param input See {@link #create(Path, Path, Set)}
+     * @param headersOfInterest See {@link #create(Path, Path, Set)}
+     * @return See {@link #create(Path, Path, Set)}
+     */
     public static SimpleAnnotatedGenomicRegionCollection create(final Path input, final Set<String> headersOfInterest) {
         ClassLoader classLoader = SimpleAnnotatedGenomicRegionCollection.class.getClassLoader();
-        final File defaultConfigFile = new File(classLoader.getResource("org/broadinstitute/hellbender/tools/copynumber/utils/annotatedregion/annotated_region_default.config").getFile());
+        final File defaultConfigFile = new File(classLoader.getResource(ANNOTATED_REGION_DEFAULT_CONFIG_RESOURCE).getFile());
         return create(input, defaultConfigFile.toPath(), headersOfInterest);
     }
 
-    // TODO: Docs
+    /**
+     * Same as {@link #create(Path, Path, Set)} , but uses the default annotation
+     *   region config file in the GATK.
+     *
+     *   This is just a convenience method to use a File instead of Path.
+     *
+     * @param input See {@link #create(Path, Path, Set)}
+     * @param headersOfInterest See {@link #create(Path, Path, Set)}
+     * @return See {@link #create(Path, Path, Set)}
+     */
     public static SimpleAnnotatedGenomicRegionCollection create(final File input, final Set<String> headersOfInterest) {
         return create(input.toPath(), headersOfInterest);
     }
 
-    //TODO: Docs
+    /**
+     *  Create a new collection from the metadata of an existing collection and a list of {@link SimpleAnnotatedGenomicRegion}
+     *
+     * @param regions new regions to use in the resulting collection.  Never {@code null}.
+     * @param collection existing collection to use for all attributes, except the list of records.  Never {@code null}.
+     * @return a collection that is identical to the input collection, except that it uses the input regions for records.
+     */
     public static SimpleAnnotatedGenomicRegionCollection create(final List<SimpleAnnotatedGenomicRegion> regions,
                                                                 final SimpleAnnotatedGenomicRegionCollection collection) {
+        Utils.nonNull(regions);
+        Utils.nonNull(collection);
 
         return new SimpleAnnotatedGenomicRegionCollection(collection.getSamFileHeader(), collection.getAnnotations(), Collections.emptyList(), regions,
                 collection.getContigColumnName(), collection.getStartColumnName(), collection.getEndColumnName());
     }
-    // TODO:
+
+    /**
+     * Create a collection from components.
+     *
+     * @param regions regions to use in the resulting collection.  Never {@code null}.
+     * @param samFileHeader SAMFileHeader to include in the collection.  Represents the sample(s)/references that were used for these segments.
+     *                      {@code null} is allowed.
+     * @param annotations List of annotations to preserve in the regions.  Never {@code null}.  These are the annotations that will be written.
+     * @param contigColumnName contig column name to use if the collection is written.  Can't be {@code null}, empty, or a number.
+     * @param startColumnName start column name to use if the collection is written.  Can't be {@code null}, empty, or a number.
+     * @param endColumnName end column name to use if the collection is written.  Can't be {@code null}, empty, or a number.
+     * @return collection based on the inputs
+     */
     public static SimpleAnnotatedGenomicRegionCollection create(final List<SimpleAnnotatedGenomicRegion> regions,
                                                                                     final SAMFileHeader samFileHeader,
                                                                                     final List<String> annotations,
@@ -84,14 +123,32 @@ public class SimpleAnnotatedGenomicRegionCollection {
                                                                                     final String startColumnName,
                                                                                     final String endColumnName) {
 
+        Utils.nonNull(regions);
+        Utils.nonNull(annotations);
+        XsvLocatableTableCodec.validateLocatableColumnName(contigColumnName);
+        XsvLocatableTableCodec.validateLocatableColumnName(startColumnName);
+        XsvLocatableTableCodec.validateLocatableColumnName(endColumnName);
+
         return new SimpleAnnotatedGenomicRegionCollection(samFileHeader, annotations, Collections.emptyList(), regions,
                 contigColumnName, startColumnName, endColumnName);
     }
 
-    //TODO: Docs
+
+
+    /** Create a collection based on the contents of an input file and a given config file.  The config file must be the same as
+     * is ingested by {@link XsvLocatableTableCodec}.
+     *
+     * @param input readable path to use for the xsv file.  Must be readable.  Never {@code null}.
+     * @param inputConfigFile config file for specifying the format of the xsv file.  Must be readable.  Never {@code null}.
+     * @param headersOfInterest Only preserve these headers.  These must be present in the input file.  This parameter should not include the locatable columns
+     *                          defined by the config file, which are always preserved.
+     *                          Use {@code null} to indicate "all headers are of interest".
+     * @return never {@code null}
+     */
     public static SimpleAnnotatedGenomicRegionCollection create(final Path input, final Path inputConfigFile, final Set<String> headersOfInterest) {
 
-        //TODO: Test for existence/viability of both files.
+        IOUtils.assertFileIsReadable(input);
+        IOUtils.assertFileIsReadable(inputConfigFile);
 
         final XsvLocatableTableCodec codec = new XsvLocatableTableCodec(inputConfigFile);
         final List<SimpleAnnotatedGenomicRegion> regions = new ArrayList<>();
@@ -150,8 +207,14 @@ public class SimpleAnnotatedGenomicRegionCollection {
         }
     }
 
-    //TODO: Docs
+    /**
+     *  Write this collection to a file
+     * @param outputFile destination file, must be writable.
+     */
     public void write(final File outputFile) {
+
+        Utils.validateArg(Files.isWritable(outputFile.toPath()), "Can not write to: " + outputFile.getAbsolutePath());
+
         try (final FileWriter writer = new FileWriter(outputFile)) {
             writer.write(StringUtils.join(getComments(), "\n"));
             writer.write(getSamFileHeader().getSAMString());
@@ -166,6 +229,7 @@ public class SimpleAnnotatedGenomicRegionCollection {
         }
     }
 
+    /** Can return {@code null} */
     public SAMFileHeader getSamFileHeader() {
         return samFileHeader;
     }
