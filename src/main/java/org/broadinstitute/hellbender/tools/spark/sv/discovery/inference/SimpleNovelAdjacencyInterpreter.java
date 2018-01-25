@@ -50,7 +50,7 @@ public final class SimpleNovelAdjacencyInterpreter {
                         .mapToPair(simpleNovelAdjacency ->
                                 new Tuple2<>(simpleNovelAdjacency,
                                         inferSimpleOrBNDTypesFromNovelAdjacency(simpleNovelAdjacency,
-                                                referenceBroadcast.getValue(), referenceSequenceDictionaryBroadcast.getValue())));
+                                                referenceBroadcast, referenceSequenceDictionaryBroadcast)));
     }
 
     private JavaRDD<SimpleNovelAdjacency> getSimpleNovelAdjacencyJavaRDD(final JavaRDD<AssemblyContigWithFineTunedAlignments> assemblyContigs,
@@ -97,7 +97,10 @@ public final class SimpleNovelAdjacencyInterpreter {
      * @return the inferred type could be a single entry for simple variants, or a list of two entries with BND mates.
      */
     static List<SvType> inferSimpleOrBNDTypesFromNovelAdjacency(final SimpleNovelAdjacency simpleNovelAdjacency,
-                                                                final ReferenceMultiSource reference, final SAMSequenceDictionary referenceDictionary) {
+                                                                final Broadcast<ReferenceMultiSource> referenceBroadcast,
+                                                                final Broadcast<SAMSequenceDictionary> referenceSequenceDictionaryBroadcast) {
+        final ReferenceMultiSource reference = referenceBroadcast.getValue();
+        final SAMSequenceDictionary referenceDictionary = referenceSequenceDictionaryBroadcast.getValue();
 
         // based on characteristic of simple chimera, infer type
         final List<ChimericAlignment> alignmentEvidence = simpleNovelAdjacency.getAlignmentEvidence();

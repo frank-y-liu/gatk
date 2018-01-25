@@ -302,6 +302,18 @@ public class ContigAlignmentsModifierUnitTest extends GATKBaseTest {
         refSpan = new SimpleInterval("chr2", 91421560, 91421734);
         data.add(new Object[]{alignment, 32, false, refSpan, TextCigarCodec.decode("270H32S175M")});
 
+        alignment = new AlignmentInterval(new SimpleInterval("chr2", 128791173, 128792506),
+                1, 1332, TextCigarCodec.decode("1190M4D53M2I26M2I31M2D28M1422S"),
+                true, 60, 13, 1239, ContigAlignmentsModifier.AlnModType.NONE);
+        refSpan = new SimpleInterval("chr2", 128791173, 128792476);
+        data.add(new Object[]{alignment, 28, true, refSpan, TextCigarCodec.decode("1190M4D53M2I26M2I31M1450S")});
+
+        alignment = new AlignmentInterval(new SimpleInterval("chr2", 128791173, 128792506),
+                1, 1334, TextCigarCodec.decode("1190M4D53M2I26M2I31M2I28M1422S"),
+                true, 60, 13, 1239, ContigAlignmentsModifier.AlnModType.NONE);
+        refSpan = new SimpleInterval("chr2", 128791173, 128792476);
+        data.add(new Object[]{alignment, 28, true, refSpan, TextCigarCodec.decode("1190M4D53M2I26M2I31M1452S")});
+
         return data.toArray(new Object[data.size()][]);
     }
 
