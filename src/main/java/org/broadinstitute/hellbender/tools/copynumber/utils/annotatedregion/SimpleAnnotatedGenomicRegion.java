@@ -15,9 +15,6 @@ import java.util.stream.Collectors;
  * {@link SimpleAnnotatedGenomicRegion::START_HEADER}, and {@link SimpleAnnotatedGenomicRegion::END_HEADER}
  */
 public final class SimpleAnnotatedGenomicRegion implements Locatable {
-    public final static String CONTIG_HEADER = "CONTIG";
-    public final static String START_HEADER = "START";
-    public final static String END_HEADER = "END";
 
     private SimpleInterval interval;
     private final SortedMap<String, String> annotations;

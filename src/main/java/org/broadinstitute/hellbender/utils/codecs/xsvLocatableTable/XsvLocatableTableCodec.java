@@ -360,6 +360,18 @@ public final class XsvLocatableTableCodec extends AsciiFeatureCodec<XsvTableFeat
                 .collect(Collectors.toList());
     }
 
+    public String getFinalContigColumn() {
+        return finalContigColumn;
+    }
+
+    public String getFinalStartColumn() {
+        return finalStartColumn;
+    }
+
+    public String getFinalEndColumn() {
+        return finalEndColumn;
+    }
+
     //==================================================================================================================
     // Helper Data Types:
 

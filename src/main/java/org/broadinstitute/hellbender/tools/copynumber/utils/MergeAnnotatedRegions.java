@@ -40,7 +40,8 @@ public class MergeAnnotatedRegions extends GATKTool {
     public void traverse() {
 
         // Load the seg file.  Not done with the collection class, in order to keep the sequence dictionary optional on the input.
-        final List<SimpleAnnotatedGenomicRegion> initialSegments = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(segmentFile).getRecords();
+        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegionCollection = SimpleAnnotatedGenomicRegionCollection.create(segmentFile, null);
+        final List<SimpleAnnotatedGenomicRegion> initialSegments = simpleAnnotatedGenomicRegionCollection.getRecords();
 
         // Sort the locatables
         final List<SimpleAnnotatedGenomicRegion> segments = IntervalUtils.sortLocatablesBySequenceDictionary(initialSegments,
@@ -51,8 +52,8 @@ public class MergeAnnotatedRegions extends GATKTool {
         final List<SimpleAnnotatedGenomicRegion> finalSegments = SimpleAnnotatedGenomicRegionUtils.mergeRegions(segments,
                 getBestAvailableSequenceDictionary(), DEFAULT_SEPARATOR, l -> progressMeter.update(l));
 
-        final SimpleAnnotatedGenomicRegionCollection collection = SimpleAnnotatedGenomicRegionCollection.create(finalSegments,
-                getBestAvailableSequenceDictionary(), finalSegments.get(0).getAnnotationNames());
+        final SimpleAnnotatedGenomicRegionCollection collection =
+                SimpleAnnotatedGenomicRegionCollection.create(finalSegments, simpleAnnotatedGenomicRegionCollection);
         collection.write(outputFile);
     }
 }

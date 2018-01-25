@@ -17,7 +17,6 @@ import org.broadinstitute.hellbender.engine.VariantWalker;
 import org.broadinstitute.hellbender.engine.filters.ReadFilter;
 import org.broadinstitute.hellbender.engine.filters.ReadFilterLibrary;
 import org.broadinstitute.hellbender.exceptions.UserException;
-import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.SimpleAnnotatedGenomicRegion;
 import org.broadinstitute.hellbender.utils.GATKProtectedVariantContextUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.pileup.ReadPileup;
@@ -78,9 +77,9 @@ public class ValidateBasicSomaticShortMutations extends VariantWalker {
         return true;
     }
 
-    public final static String CONTIG = SimpleAnnotatedGenomicRegion.CONTIG_HEADER;
-    public final static String START = SimpleAnnotatedGenomicRegion.START_HEADER;
-    public final static String END = SimpleAnnotatedGenomicRegion.END_HEADER;
+    public final static String CONTIG = "CONTIG";
+    public final static String START = "START";
+    public final static String END = "END";
     public final static String REF = "ref_allele";
     public final static String ALT = "alt_allele";
     public final static String DISCOVERY_ALT_COVERAGE = "t_alt_count";

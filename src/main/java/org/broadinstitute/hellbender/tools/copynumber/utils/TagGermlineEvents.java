@@ -12,7 +12,6 @@ import org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion.Simp
 import org.broadinstitute.hellbender.tools.copynumber.utils.germlinetagging.SimpleGermlineTagger;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 @CommandLineProgramProperties(
@@ -58,18 +57,17 @@ public class TagGermlineEvents extends GATKTool{
 
     @Override
     public void traverse() {
-        final SimpleAnnotatedGenomicRegionCollection tumorSimpleAnnotatedGenomicRegionCollection = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(tumorSegmentFile);
+        final SimpleAnnotatedGenomicRegionCollection tumorSimpleAnnotatedGenomicRegionCollection = SimpleAnnotatedGenomicRegionCollection.create(tumorSegmentFile, null);
         final List<SimpleAnnotatedGenomicRegion> initialTumorSegments = tumorSimpleAnnotatedGenomicRegionCollection.getRecords();
-        final List<SimpleAnnotatedGenomicRegion> initialNormalSegments = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(calledNormalSegmentFile).getRecords();
+        final List<SimpleAnnotatedGenomicRegion> initialNormalSegments = SimpleAnnotatedGenomicRegionCollection.create(calledNormalSegmentFile, null).getRecords();
 
         final List<SimpleAnnotatedGenomicRegion> tumorSegments = SimpleGermlineTagger.tagTumorSegmentsWithGermlineActivity(
                 initialTumorSegments, initialNormalSegments, callColumnHeader, getBestAvailableSequenceDictionary(),
                 GERMLINE_TAG_HEADER, paddingInBp);
 
         final SimpleAnnotatedGenomicRegionCollection finalCollection =
-                SimpleAnnotatedGenomicRegionCollection.createCollectionFromExistingCollection(tumorSegments,
-                        tumorSimpleAnnotatedGenomicRegionCollection.getMetadata(),
-                        new ArrayList<>(tumorSegments.get(0).getAnnotations().keySet()));
+                SimpleAnnotatedGenomicRegionCollection.create(tumorSegments,
+                        tumorSimpleAnnotatedGenomicRegionCollection);
         finalCollection.write(outputFile);
     }
 

@@ -3,6 +3,7 @@ package org.broadinstitute.hellbender.tools.copynumber.utils.annotatedregion;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import htsjdk.samtools.SAMFileHeader;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.reference.ReferenceUtils;
@@ -29,7 +30,7 @@ public class SimpleAnnotatedGenomicRegionCollectionUnitTest  extends GATKBaseTes
     public void basicTest() throws IOException {
         final Set<String> headersOfInterest = Sets.newHashSet(Arrays.asList("name", "learning_SAMPLE_0"));
         final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegions =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(TEST_FILE, headersOfInterest);
+                SimpleAnnotatedGenomicRegionCollection.create(TEST_FILE, headersOfInterest);
 
         Assert.assertEquals(simpleAnnotatedGenomicRegions.size(), 15);
         Assert.assertTrue(simpleAnnotatedGenomicRegions.getRecords().stream()
@@ -63,9 +64,10 @@ public class SimpleAnnotatedGenomicRegionCollectionUnitTest  extends GATKBaseTes
     public void testCreationFromList() {
         final Set<String> headersOfInterest = Sets.newHashSet(Arrays.asList("name", "learning_SAMPLE_0"));
         final List<SimpleAnnotatedGenomicRegion> simpleAnnotatedGenomicRegions =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(TEST_FILE, headersOfInterest).getRecords();
+                SimpleAnnotatedGenomicRegionCollection.create(TEST_FILE.toPath(), headersOfInterest).getRecords();
         final SimpleAnnotatedGenomicRegionCollection collection = SimpleAnnotatedGenomicRegionCollection.create(simpleAnnotatedGenomicRegions,
-                ReferenceUtils.loadFastaDictionary(new File(hg19_chr1_1M_dict)), Lists.newArrayList("name", "learning_SAMPLE_0"));
+                new SAMFileHeader(ReferenceUtils.loadFastaDictionary(new File(hg19_chr1_1M_dict))), Lists.newArrayList("name", "learning_SAMPLE_0"),
+                "CONTIG", "START", "END");
 
         Assert.assertEquals(collection.getRecords(), simpleAnnotatedGenomicRegions);
     }
@@ -75,9 +77,9 @@ public class SimpleAnnotatedGenomicRegionCollectionUnitTest  extends GATKBaseTes
 
         // If no columns of interest are given in a read call, the method will try to load all columns as "interesting".
         final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegions =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(TEST_FILE);
+                SimpleAnnotatedGenomicRegionCollection.create(TEST_FILE.toPath(), null);
 
-        Assert.assertEquals(simpleAnnotatedGenomicRegions.size(), 15);
+        Assert.assertEquals(simpleAnnotatedGenomicRegions.getRecords().size(), 15);
         Assert.assertTrue(simpleAnnotatedGenomicRegions.getRecords().stream()
                 .mapToInt(s -> s.getAnnotations().entrySet().size())
                 .allMatch(i -> i == 101)); // The number of columns in the TEST_FILE (name, learning_SAMPLE_0...99
@@ -88,7 +90,7 @@ public class SimpleAnnotatedGenomicRegionCollectionUnitTest  extends GATKBaseTes
         final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegions =
                 SimpleAnnotatedGenomicRegionCollection.create(TEST_FILE.toPath(), TEST_CONFIG.toPath(), null);
 
-        Assert.assertEquals(simpleAnnotatedGenomicRegions.size(), 15);
+        Assert.assertEquals(simpleAnnotatedGenomicRegions.getRecords().size(), 15);
         Assert.assertTrue(simpleAnnotatedGenomicRegions.getRecords().stream()
                 .allMatch(s -> s.getAnnotations().entrySet().size() == 101));
     }
@@ -139,4 +141,12 @@ public class SimpleAnnotatedGenomicRegionCollectionUnitTest  extends GATKBaseTes
         assertLearningSampleTest(headersOfInterest, simpleAnnotatedGenomicRegions);
     }
 
+    @Test
+    public void basicTestTribbleWithNoConfig() throws IOException {
+        final Set<String> headersOfInterest = Sets.newHashSet(Arrays.asList("name", "learning_SAMPLE_0"));
+        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegions =
+                SimpleAnnotatedGenomicRegionCollection.create(TEST_FILE, headersOfInterest);
+
+        assertLearningSampleTest(headersOfInterest, simpleAnnotatedGenomicRegions);
+    }
 }

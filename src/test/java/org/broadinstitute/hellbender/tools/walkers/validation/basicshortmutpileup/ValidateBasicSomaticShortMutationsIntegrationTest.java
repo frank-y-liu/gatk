@@ -62,7 +62,7 @@ public class ValidateBasicSomaticShortMutationsIntegrationTest extends CommandLi
         Assert.assertTrue(outputFile.exists());
 
         final List<SimpleAnnotatedGenomicRegion> variantValidationResults =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, new HashSet<>(Arrays.asList(ValidateBasicSomaticShortMutations.headers))).getRecords();
+                SimpleAnnotatedGenomicRegionCollection.create(outputFile, new HashSet<>(Arrays.asList(ValidateBasicSomaticShortMutations.headers))).getRecords();
 
         Assert.assertEquals(variantValidationResults.size(), 2);
 
@@ -119,7 +119,7 @@ public class ValidateBasicSomaticShortMutationsIntegrationTest extends CommandLi
         Assert.assertTrue(outputFile.exists());
 
         final List<SimpleAnnotatedGenomicRegion> variantValidationResults =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, new HashSet<>(Arrays.asList(ValidateBasicSomaticShortMutations.headers))).getRecords();
+                SimpleAnnotatedGenomicRegionCollection.create(outputFile, new HashSet<>(Arrays.asList(ValidateBasicSomaticShortMutations.headers))).getRecords();
 
         Assert.assertEquals(variantValidationResults.size(), 336);
 

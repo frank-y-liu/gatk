@@ -49,7 +49,7 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
 
         Assert.assertTrue(outputFile.exists());
 
-        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO", "CALL", "Segment_Mean", "Segment_Call"));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.create(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO", "CALL", "Segment_Mean", "Segment_Call"));
         Assert.assertEquals(regions.size(), 4);
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == columnSet.size()));
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().keySet().containsAll(columnSet)));
@@ -77,7 +77,7 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
 
         Assert.assertTrue(outputFile.exists());
 
-        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2"));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.create(outputFile, Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2"));
         final Set<String> gtColumnSet = Sets.newHashSet("MEAN_LOG2_COPY_RATIO_1", "CALL_1", "MEAN_LOG2_COPY_RATIO_2", "CALL_2");
         Assert.assertEquals(regions.size(), 4);
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == gtColumnSet.size()));
@@ -110,7 +110,7 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
         final String SEGMENT_MEAN_1 = "Segment_Mean_1";
         final String SEGMENT_MEAN_2 = "Segment_Mean_2";
         final String SEGMENT_CALL_2 = "Segment_Call_2";
-        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.create(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
         Assert.assertEquals(regions.size(), 13);
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == 4));
         assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions.getRecords());
@@ -199,7 +199,7 @@ public class CombineSegmentBreakpointsIntegrationTest extends CommandLineProgram
         final String SEGMENT_MEAN_1 = "Segment_Mean_" + TEST;
         final String SEGMENT_MEAN_2 = "Segment_Mean_" + GT;
         final String SEGMENT_CALL_2 = "Segment_Call_" + GT;
-        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
+        final SimpleAnnotatedGenomicRegionCollection regions = SimpleAnnotatedGenomicRegionCollection.create(outputFile, Sets.newHashSet(SEGMENT_MEAN_1, SEGMENT_CALL_1, SEGMENT_MEAN_2, SEGMENT_CALL_2));
         Assert.assertEquals(regions.size(), 13);
         Assert.assertTrue(regions.getRecords().stream().allMatch(r -> r.getAnnotations().size() == 4));
         assertUnionedSegFiles(SEGMENT_CALL_1, SEGMENT_MEAN_1, SEGMENT_MEAN_2, SEGMENT_CALL_2, regions.getRecords());

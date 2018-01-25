@@ -2,7 +2,9 @@ package org.broadinstitute.hellbender.tools.copynumber.utils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SamFileHeaderMerger;
 import htsjdk.samtools.util.Locatable;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.barclay.argparser.Argument;
@@ -29,8 +31,8 @@ import java.util.stream.Collectors;
         oneLineSummary = "Combine the breakpoints of two segment files and annotate the resulting intervals with chosen columns from each file.",
         summary = "Combine the breakpoints of two segment files while preserving annotations.\n" +
                 "This tool will load all segments into RAM.\n"+
-        "Expected interval columns are: " + SimpleAnnotatedGenomicRegion.CONTIG_HEADER + ", " +
-        SimpleAnnotatedGenomicRegion.START_HEADER + ", " + SimpleAnnotatedGenomicRegion.END_HEADER,
+                "Column headers for locatable information are taken from the first segment file.\n" +
+        "Expected interval columns are: CONTIG, START, END",
         programGroup = CopyNumberProgramGroup.class)
 @DocumentedFeature
 @ExperimentalFeature
@@ -75,10 +77,10 @@ public class CombineSegmentBreakpoints extends GATKTool {
     @Override
     public void traverse() {
 
-        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegionCollection1 = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(segmentFiles.get(0), columnsOfInterest);
+        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegionCollection1 = SimpleAnnotatedGenomicRegionCollection.create(segmentFiles.get(0), columnsOfInterest);
         final List<SimpleAnnotatedGenomicRegion> segments1 = simpleAnnotatedGenomicRegionCollection1.getRecords();
 
-        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegionCollection2 = SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(segmentFiles.get(1), columnsOfInterest);
+        final SimpleAnnotatedGenomicRegionCollection simpleAnnotatedGenomicRegionCollection2 = SimpleAnnotatedGenomicRegionCollection.create(segmentFiles.get(1), columnsOfInterest);
         final List<SimpleAnnotatedGenomicRegion> segments2 = simpleAnnotatedGenomicRegionCollection2.getRecords();
 
         // Check to see if we should warn the user that one or more columns of interest were not seen in any input file.
@@ -108,7 +110,16 @@ public class CombineSegmentBreakpoints extends GATKTool {
                 Arrays.asList(input1ToOutputHeaderMap, input2ToOutputHeaderMap), getBestAvailableSequenceDictionary(),
                 l -> progressMeter.update(l));
 
-        final SimpleAnnotatedGenomicRegionCollection finalCollection = SimpleAnnotatedGenomicRegionCollection.create(finalList, getBestAvailableSequenceDictionary(), new ArrayList<>(finalList.get(0).getAnnotations().keySet()));
+        final SamFileHeaderMerger samFileHeaderMerger = new SamFileHeaderMerger(SAMFileHeader.SortOrder.coordinate,
+                Lists.newArrayList(simpleAnnotatedGenomicRegionCollection1.getSamFileHeader(),
+                        simpleAnnotatedGenomicRegionCollection2.getSamFileHeader()),true);
+
+        final List <String> finalAnnotations = Lists.newArrayList(finalList.get(0).getAnnotations().keySet());
+        finalAnnotations.sort(String::compareTo);
+        final SimpleAnnotatedGenomicRegionCollection finalCollection =
+                SimpleAnnotatedGenomicRegionCollection.create(finalList, samFileHeaderMerger.getMergedHeader(), finalAnnotations,
+                        simpleAnnotatedGenomicRegionCollection1.getContigColumnName(),simpleAnnotatedGenomicRegionCollection1.getStartColumnName(),
+                        simpleAnnotatedGenomicRegionCollection1.getEndColumnName());
         finalCollection.write(outputFile);
     }
 

@@ -34,7 +34,7 @@ public class MergeAnnotatedRegionsIntegrationTest extends CommandLineProgramTest
         runCommandLine(arguments);
 
         final SimpleAnnotatedGenomicRegionCollection collection =
-                SimpleAnnotatedGenomicRegionCollection.readAnnotatedRegions(outputFile);
+                SimpleAnnotatedGenomicRegionCollection.create(outputFile, null);
 
         Assert.assertEquals(collection.getRecords().size(), 5);
 
